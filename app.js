@@ -3,10 +3,10 @@ const $=id=>document.getElementById(id);
 const fields=['caption','location','date','camera','lens','focal','aperture','shutter','iso','hashtags'];
 let photoURL='',revision=0,worker=null,toastTimer;
 const aiHint='Detailed AI describes scene elements and their arrangement. First use downloads several hundred MB and may take a few minutes. Review every draft.';
-function update(){const text=captionText(Object.fromEntries(fields.map(k=>[k,$(k).value])));$('preview').value=text;$('count').textContent=`${Array.from(text).length.toLocaleString()} characters`;$('copy').disabled=!text;$('copy-alt').disabled=!$('alt').value.trim();}
+function update(){renderTags();const text=captionText(Object.fromEntries(fields.map(k=>[k,$(k).value])));$('preview').value=text;$('count').textContent=`${Array.from(text).length.toLocaleString()} characters`;$('copy').disabled=!text;$('copy-alt').disabled=!$('alt').value.trim();}
 function toast(text){$('toast').textContent=text;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').textContent='',5000);}
 function stopAI(){worker?.terminate();worker=null;$('generate').disabled=!photoURL;$('cancel-ai').hidden=true;}
-function clear(){revision++;stopAI();if(photoURL)URL.revokeObjectURL(photoURL);photoURL='';$('details').reset();$('alt').value='';$('file').value='';$('photo').removeAttribute('src');$('photo').hidden=true;$('upload-prompt').hidden=false;$('filename').textContent='No photo selected';$('dimensions').textContent='';$('metadata-status').textContent='Original camera files work best. Exported images may have fewer details.';$('ai-status').textContent=aiHint;$('generate').disabled=true;update();}
+function clear(){revision++;stopAI();if(photoURL)URL.revokeObjectURL(photoURL);photoURL='';$('details').reset();$('hashtags').value='';$('alt').value='';$('file').value='';$('photo').removeAttribute('src');$('photo').hidden=true;$('upload-prompt').hidden=false;$('filename').textContent='No photo selected';$('dimensions').textContent='';$('metadata-status').textContent='Original camera files work best. Exported images may have fewer details.';$('ai-status').textContent=aiHint;$('generate').disabled=true;update();}
 async function load(file){
   if(!file)return;
   if(!/\.(jpe?g|png|webp)$/i.test(file.name)||file.size>40*1024*1024){toast('Choose a JPEG, PNG or WebP under 40 MB.');return;}
@@ -45,4 +45,36 @@ $('generate').addEventListener('click',()=>{
   }catch{fail();}
 });
 function fail(){stopAI();$('ai-status').textContent='AI could not run here. Try Quick mode or a current desktop browser with an internet connection. You can also enter alt text manually.';}
+update();
+
+const commonTags=['Nikon','iPhoneography','photography','photooftheday','picoftheday','landscape','portraiture'];
+function currentTags(){return $('hashtags').value.split(/\s+/).map(t=>t.replace(/#/g,'')).filter(Boolean);}
+function renderTags(){
+  const selected=currentTags();
+  $('selected-tags').replaceChildren();
+  for(const tag of selected){
+    const button=document.createElement('button');button.type='button';button.className='tag-chip selected';
+    button.textContent='#'+tag+' ×';button.setAttribute('aria-label','Remove #'+tag);
+    button.addEventListener('click',()=>{$('hashtags').value=currentTags().filter(t=>t.toLowerCase()!==tag.toLowerCase()).map(t=>'#'+t).join(' ');update();});
+    $('selected-tags').append(button);
+  }
+  for(const button of $('common-tags').children){
+    button.disabled=selected.some(t=>t.toLowerCase()===button.dataset.tag.toLowerCase());
+  }
+}
+function addTag(raw){
+  const tag=raw.replace(/#/g,'').trim();
+  if(!tag){$('tag-input').value='';return;}
+  if(!/^[\p{L}\p{M}\p{N}_]+$/u.test(tag)){toast('Enter one hashtag using letters, numbers or underscores.');return;}
+  if(!currentTags().some(t=>t.toLowerCase()===tag.toLowerCase())){
+    $('hashtags').value=[...currentTags(),tag].map(t=>'#'+t).join(' ');
+  }
+  $('tag-input').value='';update();$('tag-input').focus();
+}
+for(const tag of commonTags){
+  const button=document.createElement('button');button.type='button';button.className='tag-chip';button.dataset.tag=tag;button.textContent='#'+tag;
+  button.addEventListener('click',()=>addTag(tag));$('common-tags').append(button);
+}
+$('add-tag').addEventListener('click',()=>addTag($('tag-input').value));
+$('tag-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();addTag(e.currentTarget.value);}});
 update();
