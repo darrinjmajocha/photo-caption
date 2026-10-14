@@ -16,6 +16,7 @@ All paths are relative, so this works both at a custom domain and at `https://US
 - Select or drop a JPEG, PNG or WebP under 40 MB. Clicking the image lets you replace it; replacing it clears the previous post.
 - Original JPEGs offer the best EXIF support. Social-media downloads, screenshots and some exports lack metadata. Unsupported/corrupt metadata leaves the form usable.
 - Date, camera body, lens, focal length, aperture, shutter speed and ISO fill when available. Embedded IPTC city/state/country can supply location. GPS coordinates are intentionally not read or reverse-geocoded; enter a place name yourself when blank.
+- Aperture is rounded to the nearest hundredth (without unnecessary trailing zeros). Shutter fractions use a whole-number denominator; exposures of one second or longer round to whole seconds. The same rounding applies to manually edited values in the preview and copied caption.
 - Write your caption. Edit all details and hashtags. Camera hashtags are suggested from make/model; subject hashtags are manual.
 - Copy caption copies **text**, not the photograph. Upload the original photo separately in Instagram. Missing fields are omitted, and the preview is exactly what gets copied.
 - Alt text is separate from the caption. Copy it into Instagram's alt-text field. Reset clears the photo, details and descriptions and cancels AI.
@@ -23,7 +24,7 @@ All paths are relative, so this works both at a custom domain and at `https://US
 
 ## Optional local AI
 
-Generate alt text downloads Transformers.js 2.17.2 from jsDelivr and the quantized `Xenova/vit-gpt2-image-captioning` model from Hugging Face. Your photo is processed locally in a Web Worker, not sent to an inference service. The first use needs internet and downloads several hundred MB; browser caching can speed later use. Network providers receive normal requests for code/model files. Google Fonts also receives font requests; remove the first CSS line to use system fonts only.
+Detailed mode uses Transformers.js 3.8.1 and `onnx-community/Florence-2-base-ft` with its MORE_DETAILED_CAPTION task to describe scene elements and composition. It uses WebGPU when available, with a slower CPU fallback. Quick mode retains Transformers.js 2.17.2 and `Xenova/vit-gpt2-image-captioning`. Libraries download from jsDelivr and models from Hugging Face. Your photo is processed locally in a Web Worker, not sent to an inference service. The first use needs internet and downloads several hundred MB; browser caching can speed later use. Network providers receive normal requests for code/model files. Google Fonts also receives font requests; remove the first CSS line to use system fonts only.
 
 AI can be slow or unavailable on memory-constrained devices. Use a current desktop browser. Generation is optional and cancellable; manual alt text always works. Descriptions may miss details or invent objects: review every draft. Download failures show a message without losing your form. The worker uses one WASM thread so GitHub Pages does not need special cross-origin isolation headers.
 

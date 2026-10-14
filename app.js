@@ -2,7 +2,7 @@ import {captionText,fromMetadata} from './format.mjs';
 const $=id=>document.getElementById(id);
 const fields=['caption','location','date','camera','lens','focal','aperture','shutter','iso','hashtags'];
 let photoURL='',revision=0,worker=null,toastTimer;
-const aiHint='Optional on-device AI. First use downloads several hundred MB and may take a few minutes. Review the result before using it.';
+const aiHint='Detailed AI describes scene elements and their arrangement. First use downloads several hundred MB and may take a few minutes. Review every draft.';
 function update(){const text=captionText(Object.fromEntries(fields.map(k=>[k,$(k).value])));$('preview').value=text;$('count').textContent=`${Array.from(text).length.toLocaleString()} characters`;$('copy').disabled=!text;$('copy-alt').disabled=!$('alt').value.trim();}
 function toast(text){$('toast').textContent=text;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').textContent='',5000);}
 function stopAI(){worker?.terminate();worker=null;$('generate').disabled=!photoURL;$('cancel-ai').hidden=true;}
@@ -41,8 +41,8 @@ $('generate').addEventListener('click',()=>{
     worker.onmessage=({data})=>{if(data.type==='progress')$('ai-status').textContent=data.text;
       else if(data.type==='result'){if($('alt').value===startingText){$('alt').value=data.text;$('ai-status').textContent='Draft generated locally. Check the subject and details, then edit before copying.';}else{$('ai-status').textContent=`You edited your description while AI ran. Suggested draft: ${data.text}`;}stopAI();update();}
       else if(data.type==='error')fail();};
-    worker.onerror=fail;worker.postMessage({url:photoURL});
+    worker.onerror=fail;worker.postMessage({url:photoURL,mode:$('alt-mode').value});
   }catch{fail();}
 });
-function fail(){stopAI();$('ai-status').textContent='AI could not run here. Try a current desktop browser with an internet connection, or enter alt text manually.';}
+function fail(){stopAI();$('ai-status').textContent='AI could not run here. Try Quick mode or a current desktop browser with an internet connection. You can also enter alt text manually.';}
 update();
