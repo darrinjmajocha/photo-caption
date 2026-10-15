@@ -13,14 +13,14 @@ All paths are relative, so this works both at a custom domain and at `https://US
 
 ## Use
 
-- Select or drop a JPEG, PNG or WebP under 40 MB. Clicking the image lets you replace it; replacing it clears the previous post.
+- Select or drop a JPEG, PNG or WebP under 40 MB. Clicking the image lets you replace it. Existing text is kept; metadata fills only empty fields. Use Reset to start a different post.
 - Original JPEGs offer the best EXIF support. Social-media downloads, screenshots and some exports lack metadata. Unsupported/corrupt metadata leaves the form usable.
 - Date, camera body, lens, focal length, aperture, shutter speed and ISO fill when available. Embedded IPTC city/state/country can supply location. GPS coordinates are intentionally not read or reverse-geocoded; enter a place name yourself when blank.
 - Aperture is rounded to the nearest hundredth (without unnecessary trailing zeros). Shutter fractions use a whole-number denominator; exposures of one second or longer round to whole seconds. The same rounding applies to manually edited values in the preview and copied caption.
-- Write your caption. Edit all details and hashtags. Camera hashtags are suggested from make/model; subject hashtags are manual.
+- Write your caption. Edit all details and hashtags. Hashtags are only added when you select a common tag or enter one yourself.
 - Copy caption copies **text**, not the photograph. Upload the original photo separately in Instagram. Missing fields are omitted, and the preview is exactly what gets copied.
 - Alt text is separate from the caption. Copy it into Instagram's alt-text field. Reset clears the photo, details and descriptions and cancels AI.
-- Nothing is persisted by this app. Refreshing or closing clears the current post.
+- Text fields, selected hashtags, unfinished hashtag input, alt text and detail mode save automatically in localStorage for this site in this browser. Refreshing or reopening restores the text, without the photo. Reset clears the saved draft. Browser data deletion or private browsing can remove the saved text; drafts do not sync between devices.
 
 ## Optional local AI
 

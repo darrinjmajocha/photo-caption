@@ -1,20 +1,39 @@
 import {captionText,fromMetadata} from './format.mjs';
 const $=id=>document.getElementById(id);
 const fields=['caption','location','date','camera','lens','focal','aperture','shutter','iso','hashtags'];
+const draftKey='photo-notes:draft:'+location.pathname;
+const draftFields=[...fields,'alt','tag-input','alt-mode'];
+function saveDraft(){
+  try{
+    const values=Object.fromEntries(draftFields.map(id=>[id,$(id).value]));
+    if(draftFields.some(id=>id!=='alt-mode' && values[id]))localStorage.setItem(draftKey,JSON.stringify(values));
+    else localStorage.removeItem(draftKey);
+    $('draft-status').textContent='Text saved in this browser. Photos are not saved. Reset clears your draft.';
+  }catch{$('draft-status').textContent='This browser could not save your draft. Keep this tab open or copy your text before closing.';}
+}
+function restoreDraft(){
+  try{
+    const raw=localStorage.getItem(draftKey);
+    if(!raw)return;
+    const values=JSON.parse(raw);
+    if(!values || typeof values!=='object' || Array.isArray(values))return;
+    for(const id of draftFields)if(typeof values[id]==='string')$(id).value=values[id];
+  }catch{$('draft-status').textContent='The saved draft could not be restored.';}
+}
 let photoURL='',revision=0,worker=null,toastTimer;
 const aiHint='Detailed AI describes scene elements and their arrangement. First use downloads several hundred MB and may take a few minutes. Review every draft.';
-function update(){renderTags();const text=captionText(Object.fromEntries(fields.map(k=>[k,$(k).value])));$('preview').value=text;$('count').textContent=`${Array.from(text).length.toLocaleString()} characters`;$('copy').disabled=!text;$('copy-alt').disabled=!$('alt').value.trim();}
+function update(){renderTags();const text=captionText(Object.fromEntries(fields.map(k=>[k,$(k).value])));$('preview').value=text;$('count').textContent=`${Array.from(text).length.toLocaleString()} characters`;$('copy').disabled=!text;$('copy-alt').disabled=!$('alt').value.trim();saveDraft();}
 function toast(text){$('toast').textContent=text;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').textContent='',5000);}
 function stopAI(){worker?.terminate();worker=null;$('generate').disabled=!photoURL;$('cancel-ai').hidden=true;}
 function clear(){revision++;stopAI();if(photoURL)URL.revokeObjectURL(photoURL);photoURL='';$('details').reset();$('hashtags').value='';$('alt').value='';$('file').value='';$('photo').removeAttribute('src');$('photo').hidden=true;$('upload-prompt').hidden=false;$('filename').textContent='No photo selected';$('dimensions').textContent='';$('metadata-status').textContent='Original camera files work best. Exported images may have fewer details.';$('ai-status').textContent=aiHint;$('generate').disabled=true;update();}
 async function load(file){
   if(!file)return;
   if(!/\.(jpe?g|png|webp)$/i.test(file.name)||file.size>40*1024*1024){toast('Choose a JPEG, PNG or WebP under 40 MB.');return;}
-  clear();const token=revision;
+  revision++;stopAI();if(photoURL)URL.revokeObjectURL(photoURL);photoURL='';$('photo').hidden=true;$('upload-prompt').hidden=false;$('dimensions').textContent='';const token=revision;
   const url=URL.createObjectURL(file);photoURL=url;
   $('filename').textContent=file.name;$('metadata-status').textContent='Reading photo details…';
   const img=new Image();img.src=url;
-  try{await img.decode();}catch{if(token===revision){clear();toast('This image could not be opened. Try exporting it as a JPEG.');}return;}
+  try{await img.decode();}catch{if(token===revision){URL.revokeObjectURL(url);photoURL='';$('generate').disabled=true;$('filename').textContent='No photo selected';$('metadata-status').textContent='Could not open this image. Your text has been kept.';toast('This image could not be opened. Try exporting it as a JPEG.');}return;}
   if(token!==revision)return;
   $('photo').src=url;$('photo').hidden=false;$('upload-prompt').hidden=true;$('dimensions').textContent=`${img.naturalWidth} × ${img.naturalHeight}`;$('generate').disabled=false;
   const initial=Object.fromEntries(fields.map(k=>[k,$(k).value]));
@@ -22,7 +41,7 @@ async function load(file){
     const metadata=await window.exifr.parse(file,{tiff:true,exif:true,iptc:true,gps:false,translateValues:true,reviveValues:false,pick:['Make','Model','LensModel','FocalLength','FNumber','ExposureTime','ISO','DateTimeOriginal','CreateDate','City','State','Country']});
     if(token!==revision)return;
     const values=fromMetadata(metadata||{});let count=0;
-    for(const [key,value]of Object.entries(values)){if(value&&$(key).value===initial[key]){$(key).value=value;count++;}}
+    for(const [key,value]of Object.entries(values)){if(value&&!initial[key]&&$(key).value===initial[key]){$(key).value=value;count++;}}
     $('metadata-status').textContent=count?`${count} fields filled from photo metadata. Review and edit any detail below.`:'No usable camera metadata found. You can fill in the details below.';
   }catch{if(token===revision)$('metadata-status').textContent='Could not read this photo’s metadata. You can still enter everything manually.';}
   update();
@@ -45,7 +64,6 @@ $('generate').addEventListener('click',()=>{
   }catch{fail();}
 });
 function fail(){stopAI();$('ai-status').textContent='AI could not run here. Try Quick mode or a current desktop browser with an internet connection. You can also enter alt text manually.';}
-update();
 
 const commonTags=['Nikon','iPhoneography','photography','photooftheday','picoftheday','landscape','portraiture'];
 function currentTags(){return $('hashtags').value.split(/\s+/).map(t=>t.replace(/#/g,'')).filter(Boolean);}
@@ -77,4 +95,7 @@ for(const tag of commonTags){
 }
 $('add-tag').addEventListener('click',()=>addTag($('tag-input').value));
 $('tag-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();addTag(e.currentTarget.value);}});
+$('alt-mode').addEventListener('change',saveDraft);
+window.addEventListener('pagehide',saveDraft);
+restoreDraft();
 update();

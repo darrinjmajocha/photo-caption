@@ -35,6 +35,5 @@ export function captionText(fields) {
 export function fromMetadata(m={}) {
   const camera=clean(m.Model),make=clean(m.Make);
   const body=camera && make && !camera.toLowerCase().includes(make.toLowerCase()) ? `${make} ${camera}` : camera || make;
-  const tag=v=>v.replace(/[^\p{L}\p{N}_]/gu,'');
-  return {date:dateInput(m.DateTimeOriginal || m.CreateDate),camera:body,lens:clean(m.LensModel),focal:m.FocalLength>0?`${m.FocalLength}mm`:'',aperture:aperture(m.FNumber),shutter:shutter(m.ExposureTime),iso:clean(m.ISO),location:[m.City,m.State,m.Country].map(clean).filter(Boolean).join(', '),hashtags:[make && `#${tag(make)}Photography`,body && `#${tag(body)}`].filter(Boolean).join(' ')};
+  return {date:dateInput(m.DateTimeOriginal || m.CreateDate),camera:body,lens:clean(m.LensModel),focal:m.FocalLength>0?`${m.FocalLength}mm`:'',aperture:aperture(m.FNumber),shutter:shutter(m.ExposureTime),iso:clean(m.ISO),location:[m.City,m.State,m.Country].map(clean).filter(Boolean).join(', ')};
 }
