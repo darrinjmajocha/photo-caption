@@ -8,3 +8,13 @@ test('normalizes tags and keeps entered content as text',()=>assert.equal(captio
 
 test('rounds fractional exposure and aperture metadata',()=>{const f=fromMetadata({ExposureTime:1/124.7,FNumber:5.6789});assert.equal(f.shutter,'1/125s');assert.equal(f.aperture,'f/5.68');assert.equal(shutter(1.6),'2s');assert.equal(shutter(0),'');});
 test('rounds manually edited values in copied caption',()=>{assert.equal(captionText({shutter:'1/124.7s',aperture:'f/5.6789'}),'⚙️ f/5.68 | 1/125s');assert.equal(captionText({shutter:'2.6',aperture:'8'}),'⚙️ f/8 | 3s');});
+
+test('credit requires explicit enablement and nonempty text',()=>{
+  for(const credit of ['', '   '])assert.equal(captionText({credit,creditEnabled:true}), '');
+  assert.equal(captionText({credit:'@username',creditEnabled:false}), '');
+  assert.equal(captionText({credit:'@username'}), '');
+});
+test('credit appears above hashtags without an automatic at sign',()=>{
+  assert.equal(captionText({caption:'Sunset',iso:'50',credit:'Jane Doe',creditEnabled:true,hashtags:'landscape'}),'Sunset\n\n⚙️ ISO 50\n\nPhoto Credit: Jane Doe\n\n#landscape');
+  assert.equal(captionText({credit:'@username',creditEnabled:true}),'Photo Credit: @username');
+});

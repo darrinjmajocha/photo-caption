@@ -1,11 +1,12 @@
 import {captionText,fromMetadata} from './format.mjs';
 const $=id=>document.getElementById(id);
-const fields=['caption','location','date','camera','lens','focal','aperture','shutter','iso','hashtags'];
+const fields=['caption','location','date','camera','lens','focal','aperture','shutter','iso','credit','hashtags'];
 const draftKey='photo-notes:draft:'+location.pathname;
 const draftFields=[...fields,'alt','tag-input','alt-mode'];
 function saveDraft(){
   try{
     const values=Object.fromEntries(draftFields.map(id=>[id,$(id).value]));
+    values.creditEnabled=$('credit-enabled').checked;
     if(draftFields.some(id=>id!=='alt-mode' && values[id]))localStorage.setItem(draftKey,JSON.stringify(values));
     else localStorage.removeItem(draftKey);
     $('draft-status').textContent='Text saved in this browser. Photos are not saved. Reset clears your draft.';
@@ -18,11 +19,12 @@ function restoreDraft(){
     const values=JSON.parse(raw);
     if(!values || typeof values!=='object' || Array.isArray(values))return;
     for(const id of draftFields)if(typeof values[id]==='string')$(id).value=values[id];
+    $('credit-enabled').checked=values.creditEnabled===true;
   }catch{$('draft-status').textContent='The saved draft could not be restored.';}
 }
 let photoURL='',revision=0,worker=null,toastTimer;
 const aiHint='Detailed AI describes scene elements and their arrangement. First use downloads several hundred MB and may take a few minutes. Review every draft.';
-function update(){renderTags();const text=captionText(Object.fromEntries(fields.map(k=>[k,$(k).value])));$('preview').value=text;$('count').textContent=`${Array.from(text).length.toLocaleString()} characters`;$('copy').disabled=!text;$('copy-alt').disabled=!$('alt').value.trim();saveDraft();}
+function update(){renderTags();const text=captionText({...Object.fromEntries(fields.map(k=>[k,$(k).value])),creditEnabled:$('credit-enabled').checked});$('preview').value=text;$('count').textContent=`${Array.from(text).length.toLocaleString()} characters`;$('copy').disabled=!text;$('copy-alt').disabled=!$('alt').value.trim();saveDraft();}
 function toast(text){$('toast').textContent=text;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').textContent='',5000);}
 function stopAI(){worker?.terminate();worker=null;$('generate').disabled=!photoURL;$('cancel-ai').hidden=true;}
 function clear(){revision++;stopAI();if(photoURL)URL.revokeObjectURL(photoURL);photoURL='';$('details').reset();$('hashtags').value='';$('alt').value='';$('file').value='';$('photo').removeAttribute('src');$('photo').hidden=true;$('upload-prompt').hidden=false;$('filename').textContent='No photo selected';$('dimensions').textContent='';$('metadata-status').textContent='Original camera files work best. Exported images may have fewer details.';$('ai-status').textContent=aiHint;$('generate').disabled=true;update();}

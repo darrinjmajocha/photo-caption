@@ -30,7 +30,8 @@ export function captionText(fields) {
   if(gear) info.push(`📷 ${gear}`);
   const settings=[f.focal && (/mm$/i.test(f.focal)?f.focal:`${f.focal}mm`), f.aperture && (aperture(f.aperture) || f.aperture), f.shutter && formatShutter(f.shutter), f.iso && (/^ISO\b/i.test(f.iso)?f.iso:`ISO ${f.iso}`)].filter(Boolean);
   if(settings.length) info.push(`⚙️ ${settings.join(' | ')}`);
-  return [f.caption,info.join('\n'),normalizeTags(f.hashtags)].filter(Boolean).join('\n\n');
+  const credit=fields.creditEnabled===true && f.credit ? `Photo Credit: ${f.credit}` : '';
+  return [f.caption,info.join('\n'),credit,normalizeTags(f.hashtags)].filter(Boolean).join('\n\n');
 }
 export function fromMetadata(m={}) {
   const camera=clean(m.Model),make=clean(m.Make);
